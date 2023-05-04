@@ -1,21 +1,21 @@
 /***************************************************************
    Motor driver definitions
-   
+
    Add a "#elif defined" block to this file to include support
    for a particular motor driver.  Then add the appropriate
    #define near the top of the main ROSArduinoBridge.ino file.
-   
+
    *************************************************************/
 
 #ifdef USE_BASE
-   
+
 #ifdef POLOLU_VNH5019
   /* Include the Pololu library */
   #include "DualVNH5019MotorShield.h"
 
   /* Create the motor driver object */
   DualVNH5019MotorShield drive;
-  
+
   /* Wrap the motor driver initialization */
   void initMotorController() {
     drive.init();
@@ -38,7 +38,7 @@
 
   /* Create the motor driver object */
   DualMC33926MotorShield drive;
-  
+
   /* Wrap the motor driver initialization */
   void initMotorController() {
     drive.init();
@@ -60,10 +60,10 @@
     digitalWrite(RIGHT_MOTOR_ENABLE, HIGH);
     digitalWrite(LEFT_MOTOR_ENABLE, HIGH);
   }
-  
+
   void setMotorSpeed(int i, int spd) {
     unsigned char reverse = 0;
-  
+
     if (spd < 0)
     {
       spd = -spd;
@@ -71,8 +71,8 @@
     }
     if (spd > 255)
       spd = 255;
-    
-    if (i == LEFT) { 
+
+    if (i == LEFT) {
       if      (reverse == 0) { analogWrite(LEFT_MOTOR_FORWARD, spd); analogWrite(LEFT_MOTOR_BACKWARD, 0); }
       else if (reverse == 1) { analogWrite(LEFT_MOTOR_BACKWARD, spd); analogWrite(LEFT_MOTOR_FORWARD, 0); }
     }
@@ -81,7 +81,56 @@
       else if (reverse == 1) { analogWrite(RIGHT_MOTOR_BACKWARD, spd); analogWrite(RIGHT_MOTOR_FORWARD, 0); }
     }
   }
-  
+
+  void setMotorSpeeds(int leftSpeed, int rightSpeed) {
+    setMotorSpeed(LEFT, leftSpeed);
+    setMotorSpeed(RIGHT, rightSpeed);
+  }
+#elif defined TB6612
+  void initMotorController() {
+    digitalWrite(RIGHT_MOTOR_ENABLE, HIGH);
+    digitalWrite(LEFT_MOTOR_ENABLE, HIGH);
+    digitalWrite(STBY, HIGH);
+  }
+
+  void setMotorSpeed(int i, int spd) {
+    // char buffer[40];
+    // sprintf(buffer, "setMotorSpeed %d %d", i, spd);
+    // Serial.println(buffer);
+    unsigned char reverse = 0;
+
+    if (spd < 0)
+    {
+      spd = -spd;
+      reverse = 1;
+    }
+    if (spd > 255)
+      spd = 255;
+
+    if (i == LEFT) {
+      analogWrite(LEFT_MOTOR_ENABLE, spd);
+      if (reverse == 0) {
+        digitalWrite(LEFT_MOTOR_FORWARD, 1);
+        digitalWrite(LEFT_MOTOR_BACKWARD, 0);
+      }
+      else if (reverse == 1) {
+        digitalWrite(LEFT_MOTOR_BACKWARD, 1);
+        digitalWrite(LEFT_MOTOR_FORWARD, 0);
+      }
+    }
+    else /*if (i == RIGHT) //no need for condition*/ {
+      analogWrite(RIGHT_MOTOR_ENABLE, spd);
+      if (reverse == 0) {
+        digitalWrite(RIGHT_MOTOR_FORWARD, 1);
+        digitalWrite(RIGHT_MOTOR_BACKWARD, 0);
+      }
+      else if (reverse == 1) {
+        digitalWrite(RIGHT_MOTOR_BACKWARD, 1);
+        digitalWrite(RIGHT_MOTOR_FORWARD, 0);
+      }
+    }
+  }
+
   void setMotorSpeeds(int leftSpeed, int rightSpeed) {
     setMotorSpeed(LEFT, leftSpeed);
     setMotorSpeed(RIGHT, rightSpeed);

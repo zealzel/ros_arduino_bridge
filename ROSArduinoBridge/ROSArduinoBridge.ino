@@ -1,20 +1,20 @@
 /*********************************************************************
  *  ROSArduinoBridge
- 
+
     A set of simple serial commands to control a differential drive
-    robot and receive back sensor and odometry data. Default 
+    robot and receive back sensor and odometry data. Default
     configuration assumes use of an Arduino Mega + Pololu motor
     controller shield + Robogaia Mega Encoder shield.  Edit the
-    readEncoder() and setMotorSpeed() wrapper functions if using 
+    readEncoder() and setMotorSpeed() wrapper functions if using
     different motor controller or encoder method.
 
     Created for the Pi Robot Project: http://www.pirobot.org
     and the Home Brew Robotics Club (HBRC): http://hbrobotics.org
-    
+
     Authors: Patrick Goebel, James Nugen
 
     Inspired and modeled after the ArbotiX driver by Michael Ferguson
-    
+
     Software License Agreement (BSD License)
 
     Copyright (c) 2012, Patrick Goebel.
@@ -58,12 +58,15 @@
 
    /* The RoboGaia encoder shield */
    //#define ROBOGAIA
-   
+
    /* Encoders directly attached to Arduino board */
    #define ARDUINO_ENC_COUNTER
 
    /* L298 Motor driver*/
-   #define L298_MOTOR_DRIVER
+   // #define L298_MOTOR_DRIVER
+
+   /* TB6612 Motor driver*/
+   #define TB6612
 #endif
 
 //#define USE_SERVOS  // Enable use of PWM servos as defined in servos.h
@@ -108,7 +111,7 @@
 
   /* Convert the rate into an interval */
   const int PID_INTERVAL = 1000 / PID_RATE;
-  
+
   /* Track the next time we make a PID calculation */
   unsigned long nextPID = PID_INTERVAL;
 
@@ -157,7 +160,7 @@ int runCommand() {
   int pid_args[4];
   arg1 = atoi(argv1);
   arg2 = atoi(argv2);
-  
+
   switch(cmd) {
   case GET_BAUDRATE:
     Serial.println(BAUDRATE);
@@ -170,12 +173,12 @@ int runCommand() {
     break;
   case ANALOG_WRITE:
     analogWrite(arg1, arg2);
-    Serial.println("OK"); 
+    Serial.println("OK");
     break;
   case DIGITAL_WRITE:
     if (arg2 == 0) digitalWrite(arg1, LOW);
     else if (arg2 == 1) digitalWrite(arg1, HIGH);
-    Serial.println("OK"); 
+    Serial.println("OK");
     break;
   case PIN_MODE:
     if (arg2 == 0) pinMode(arg1, INPUT);
@@ -194,7 +197,7 @@ int runCommand() {
     Serial.println(servos[arg1].getServo().read());
     break;
 #endif
-    
+
 #ifdef USE_BASE
   case READ_ENCODERS:
     Serial.print(readEncoder(LEFT));
@@ -217,7 +220,7 @@ int runCommand() {
     else moving = 1;
     leftPID.TargetTicksPerFrame = arg1;
     rightPID.TargetTicksPerFrame = arg2;
-    Serial.println("OK"); 
+    Serial.println("MOTOR_SPEEDS OK");
     break;
   case MOTOR_RAW_PWM:
     /* Reset the auto stop timer */
@@ -225,7 +228,7 @@ int runCommand() {
     resetPID();
     moving = 0; // Sneaky way to temporarily disable the PID
     setMotorSpeeds(arg1, arg2);
-    Serial.println("OK"); 
+    Serial.println("MOTOR_RAW_PWM OK");
     break;
   case UPDATE_PID:
     while ((str = strtok_r(p, ":", &p)) != '\0') {
@@ -252,28 +255,33 @@ void setup() {
 // Initialize the motor controller if used */
 #ifdef USE_BASE
   #ifdef ARDUINO_ENC_COUNTER
-    //set as inputs
-    DDRD &= ~(1<<LEFT_ENC_PIN_A);
-    DDRD &= ~(1<<LEFT_ENC_PIN_B);
-    DDRC &= ~(1<<RIGHT_ENC_PIN_A);
-    DDRC &= ~(1<<RIGHT_ENC_PIN_B);
-    
-    //enable pull up resistors
-    PORTD |= (1<<LEFT_ENC_PIN_A);
-    PORTD |= (1<<LEFT_ENC_PIN_B);
-    PORTC |= (1<<RIGHT_ENC_PIN_A);
-    PORTC |= (1<<RIGHT_ENC_PIN_B);
-    
-    // tell pin change mask to listen to left encoder pins
-    PCMSK2 |= (1 << LEFT_ENC_PIN_A)|(1 << LEFT_ENC_PIN_B);
-    // tell pin change mask to listen to right encoder pins
-    PCMSK1 |= (1 << RIGHT_ENC_PIN_A)|(1 << RIGHT_ENC_PIN_B);
-    
-    // enable PCINT1 and PCINT2 interrupt in the general interrupt mask
-    PCICR |= (1 << PCIE1) | (1 << PCIE2);
+    // //set as inputs
+    // DDRD &= ~(1<<LEFT_ENC_PIN_A);
+    // DDRD &= ~(1<<LEFT_ENC_PIN_B);
+    // DDRC &= ~(1<<RIGHT_ENC_PIN_A);
+    // DDRC &= ~(1<<RIGHT_ENC_PIN_B);
+
+    // //enable pull up resistors
+    // PORTD |= (1<<LEFT_ENC_PIN_A);
+    // PORTD |= (1<<LEFT_ENC_PIN_B);
+    // PORTC |= (1<<RIGHT_ENC_PIN_A);
+    // PORTC |= (1<<RIGHT_ENC_PIN_B);
+
+    // // tell pin change mask to listen to left encoder pins
+    // PCMSK2 |= (1 << LEFT_ENC_PIN_A)|(1 << LEFT_ENC_PIN_B);
+    // // tell pin change mask to listen to right encoder pins
+    // PCMSK1 |= (1 << RIGHT_ENC_PIN_A)|(1 << RIGHT_ENC_PIN_B);
+
+    // // enable PCINT1 and PCINT2 interrupt in the general interrupt mask
+    // PCICR |= (1 << PCIE1) | (1 << PCIE2);
   #endif
+  initEncoders();
   initMotorController();
   resetPID();
+  // Serial.print("LEFT--");
+  // Serial.println(LEFT);
+  // Serial.print("RIGHT--");
+  // Serial.println(RIGHT);
 #endif
 
 /* Attach servos if used */
@@ -294,7 +302,7 @@ void setup() {
 */
 void loop() {
   while (Serial.available() > 0) {
-    
+
     // Read the next character
     chr = Serial.read();
 
@@ -332,14 +340,14 @@ void loop() {
       }
     }
   }
-  
+
 // If we are using base control, run a PID calculation at the appropriate intervals
 #ifdef USE_BASE
   if (millis() > nextPID) {
     updatePID();
     nextPID += PID_INTERVAL;
   }
-  
+
   // Check to see if we have exceeded the auto-stop interval
   if ((millis() - lastMotorCommand) > AUTO_STOP_INTERVAL) {;
     setMotorSpeeds(0, 0);
