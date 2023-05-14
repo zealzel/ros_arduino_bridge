@@ -261,30 +261,43 @@ void setup() {
 // Initialize the motor controller if used */
 #ifdef USE_BASE
   #ifdef ARDUINO_ENC_COUNTER
-    //set as inputs
-    DDRD &= ~(1<<LEFT_ENC_PIN_A);
-    DDRD &= ~(1<<LEFT_ENC_PIN_B);
-    DDRC &= ~(1<<RIGHT_ENC_PIN_A);
-    DDRC &= ~(1<<RIGHT_ENC_PIN_B);
+    // //set as inputs
+    // DDRD &= ~(1<<LEFT_ENC_PIN_A);
+    // DDRD &= ~(1<<LEFT_ENC_PIN_B);
+    // DDRC &= ~(1<<RIGHT_ENC_PIN_A);
+    // DDRC &= ~(1<<RIGHT_ENC_PIN_B);
 
-    //enable pull up resistors
-    PORTD |= (1<<LEFT_ENC_PIN_A);
-    PORTD |= (1<<LEFT_ENC_PIN_B);
-    PORTC |= (1<<RIGHT_ENC_PIN_A);
-    PORTC |= (1<<RIGHT_ENC_PIN_B);
+    // //enable pull up resistors
+    // PORTD |= (1<<LEFT_ENC_PIN_A);
+    // PORTD |= (1<<LEFT_ENC_PIN_B);
+    // PORTC |= (1<<RIGHT_ENC_PIN_A);
+    // PORTC |= (1<<RIGHT_ENC_PIN_B);
 
-    // tell pin change mask to listen to left encoder pins
-    PCMSK2 |= (1 << LEFT_ENC_PIN_A)|(1 << LEFT_ENC_PIN_B);
-    // tell pin change mask to listen to right encoder pins
-    PCMSK1 |= (1 << RIGHT_ENC_PIN_A)|(1 << RIGHT_ENC_PIN_B);
+    // // tell pin change mask to listen to left encoder pins
+    // PCMSK2 |= (1 << LEFT_ENC_PIN_A)|(1 << LEFT_ENC_PIN_B);
+    // // tell pin change mask to listen to right encoder pins
+    // PCMSK1 |= (1 << RIGHT_ENC_PIN_A)|(1 << RIGHT_ENC_PIN_B);
 
-    // enable PCINT1 and PCINT2 interrupt in the general interrupt mask
-    PCICR |= (1 << PCIE1) | (1 << PCIE2);
-    // Serial.println("RIGHT_MOTOR_BACKWARD: ");
-    Serial.println(RIGHT_MOTOR_BACKWARD);
+    // // enable PCINT1 and PCINT2 interrupt in the general interrupt mask
+    // PCICR |= (1 << PCIE1) | (1 << PCIE2);
   #endif
+  initEncoders();
   initMotorController();
   resetPID();
+
+  // Serial.print("PD2=");
+  // Serial.print(PD2);
+  // Serial.print(", PD3=");
+  // Serial.print(PD3);
+  // Serial.print(", PC4=");
+  // Serial.print(PC4);
+  // Serial.print(", PC5=");
+  // Serial.print(PC5);
+
+  // Serial.print("LEFT--");
+  // Serial.println(LEFT);
+  // Serial.print("RIGHT--");
+  // Serial.println(RIGHT);
 #endif
 
 /* Attach servos if used */
@@ -366,6 +379,5 @@ void loop() {
   }
 #endif
 }
-
 
 
