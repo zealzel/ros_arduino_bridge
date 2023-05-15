@@ -280,8 +280,6 @@ void setup() {
 
     // enable PCINT1 and PCINT2 interrupt in the general interrupt mask
     PCICR |= (1 << PCIE1) | (1 << PCIE2);
-    // Serial.println("RIGHT_MOTOR_BACKWARD: ");
-    Serial.println(RIGHT_MOTOR_BACKWARD);
   #endif
   initMotorController();
   resetPID();
